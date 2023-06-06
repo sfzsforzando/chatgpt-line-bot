@@ -62,39 +62,33 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    if "嫌いなものは" in event.message.text:
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text="つまらない関西人かな")
-        )
-    else:
-        text_message: TextMessage = event.message
-        source: Source = event.source
-        user_id: str = source.user_id
+    text_message: TextMessage = event.message
+    source: Source = event.source
+    user_id: str = source.user_id
 
-        if (gpt_client := chatgpt_instance_map.get(user_id)) is None:
-            gpt_client = ChatGPTClient(model=Model.GPT35TURBO)
-            gpt_client.add_system()
+    if (gpt_client := chatgpt_instance_map.get(user_id)) is None:
+        gpt_client = ChatGPTClient(model=Model.GPT35TURBO)
+        gpt_client.add_system()
 
-        gpt_client.add_message(
-            message=Message(role=Role.USER, content=text_message.text)
-        )
+    gpt_client.add_message(
+        message=Message(role=Role.USER, content=text_message.text)
+    )
 
-        res = gpt_client.create()
-        if res["usage"]["total_tokens"] > 2800:
-            gpt_client.delete()
+    res = gpt_client.create()
+    if res["usage"]["total_tokens"] > 2800:
+        gpt_client.delete()
 
-        res_text: str = res["choices"][0]["message"]["content"]
+    res_text: str = res["choices"][0]["message"]["content"]
 
-        # line_bot_api.reply_message(
-        #     event.reply_token, TextSendMessage(text=res_text.strip())
-        # )
-        line_bot_api.push_message(user_id,TextSendMessage(text=res_text.strip()))
+    # line_bot_api.reply_message(
+    #     event.reply_token, TextSendMessage(text=res_text.strip())
+    # )
+    line_bot_api.push_message(user_id,TextSendMessage(text=res_text.strip()))
 
-        if res["usage"]["total_tokens"] > 2800:
-            gpt_client.delete()
+    if res["usage"]["total_tokens"] > 2800:
+        gpt_client.delete()
 
-        chatgpt_instance_map[user_id] = gpt_client
+    chatgpt_instance_map[user_id] = gpt_client
 
 
 #------------------------

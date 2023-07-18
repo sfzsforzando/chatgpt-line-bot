@@ -64,9 +64,16 @@ def callback():
 def handle_message(event):
         text_message: TextMessage = event.message
         source: Source = event.source
-        user_id: str = source.user_id
+        type: str= event.source.type;
 
-        if (gpt_client := chatgpt_instance_map.get(user_id)) is None:
+        if type == 'user':
+            id: str= event.source.userId;
+        elif type == 'group':
+            id: str= event.source.groupId;
+        elif type == 'room':
+            id: str= event.source.roomId;
+
+        if (gpt_client := chatgpt_instance_map.get(id)) is None:
             gpt_client = ChatGPTClient(model=Model.GPT4)
             gpt_client.add_system()
 
@@ -83,12 +90,11 @@ def handle_message(event):
         # line_bot_api.reply_message(
         #     event.reply_token, TextSendMessage(text=res_text.strip())
         # )
-        line_bot_api.push_message(user_id,TextSendMessage(text=res_text.strip()))
+        line_bot_api.push_message(id,TextSendMessage(text=res_text.strip()))
 
         if res["usage"]["total_tokens"] > 2800:
             gpt_client.delete()
-
-        chatgpt_instance_map[user_id] = gpt_client
+        chatgpt_instance_map[id] = gpt_client
 
 
 #------------------------

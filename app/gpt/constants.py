@@ -9,3 +9,4 @@ class Role(Enum):
 
 class Model(Enum):
     GPT35TURBO = "gpt-3.5-turbo"
+    GPT4 = "gpt-4"

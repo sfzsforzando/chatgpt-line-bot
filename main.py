@@ -62,33 +62,39 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    text_message: TextMessage = event.message
-    source: Source = event.source
-    user_id: str = source.user_id
+        text_message: TextMessage = event.message
+        source: Source = event.source
+        type: str= event.source.type;
 
-    if (gpt_client := chatgpt_instance_map.get(user_id)) is None:
-        gpt_client = ChatGPTClient(model=Model.GPT35TURBO)
-        gpt_client.add_system()
+        if type == 'user':
+            id: str= event.source.userId;
+        elif type == 'group':
+            id: str= event.source.groupId;
+        elif type == 'room':
+            id: str= event.source.roomId;
 
-    gpt_client.add_message(
-        message=Message(role=Role.USER, content=text_message.text)
-    )
+        if (gpt_client := chatgpt_instance_map.get(id)) is None:
+            gpt_client = ChatGPTClient(model=Model.GPT4)
+            gpt_client.add_system()
 
-    res = gpt_client.create()
-    if res["usage"]["total_tokens"] > 2800:
-        gpt_client.delete()
+        gpt_client.add_message(
+            message=Message(role=Role.USER, content=text_message.text)
+        )
 
-    res_text: str = res["choices"][0]["message"]["content"]
+        res = gpt_client.create()
+        if res["usage"]["total_tokens"] > 2800:
+            gpt_client.delete()
 
-    # line_bot_api.reply_message(
-    #     event.reply_token, TextSendMessage(text=res_text.strip())
-    # )
-    line_bot_api.push_message(user_id,TextSendMessage(text=res_text.strip()))
+        res_text: str = res["choices"][0]["message"]["content"]
 
-    if res["usage"]["total_tokens"] > 2800:
-        gpt_client.delete()
+        # line_bot_api.reply_message(
+        #     event.reply_token, TextSendMessage(text=res_text.strip())
+        # )
+        line_bot_api.push_message(id,TextSendMessage(text=res_text.strip()))
 
-    chatgpt_instance_map[user_id] = gpt_client
+        if res["usage"]["total_tokens"] > 2800:
+            gpt_client.delete()
+        chatgpt_instance_map[id] = gpt_client
 
 
 #------------------------
